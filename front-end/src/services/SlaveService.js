@@ -10,7 +10,7 @@ export const CreateSocket = (url) => {
 
 export const OpenSocket = (webSocket) => {
     webSocket.onopen = () => {
-        console.log(`WebSocket connection opened to ${webSocket}`);
+        console.log(`WebSocket connection opened to ${webSocket.url}`);
       };
 }
 

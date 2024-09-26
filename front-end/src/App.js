@@ -1,6 +1,7 @@
 import './App.css';
 import { useEffect, useState } from 'react';
 import { CreateSocket, CloseSocket, OpenSocket} from './services/SlaveService';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 function App() {
 
@@ -8,73 +9,165 @@ function App() {
   const [messages, setMessages] = useState([]);
 
   const urls = [
-    'ws://localhost:8091',
-    'ws://localhost:8092',
-    'ws://localhost:8093',
-    'ws://localhost:8094',
+    'ws://localhost:8090/ws',
+    'ws://localhost:8091/ws',
+    'ws://localhost:8092/ws',
+    'ws://localhost:8093/ws',
   ]
 
-  useEffect(() => {
+  const [data, setData] = useState([
+    {
+      name: '01/02/2024',
+      uv: 4000,
+      pv: 2400,
+    },
+    {
+      name: 'Page B',
+      uv: 3000,
+      pv: 1398,
+    },
+    {
+      name: 'Page C',
+      uv: 2000,
+      pv: 9800,
+    },
+    {
+      name: 'Page D',
+      uv: 2780,
+      pv: 3908,
+    },
+    {
+      name: 'Page E',
+      uv: 1890,
+      pv: 4800,
+    },
+    {
+      name: 'Page F',
+      uv: 2390,
+      pv: 3800,
+    },
+    {
+      name: 'Page G',
+      uv: 3490,
+      pv: 4300,
+    },
+    // ... more initial data
+  ]);
 
-    // const connectSOckets = () => {
-    //   const webSockets = urls.map((url) => CreateSocket(url));
-    //   setSockets(webSockets)
-  
-    //   sockets.forEach((webSocket) => OpenSocket(webSocket))
-  
-    //   // KAKO DA ZANM ZA KOJEG SOCKETA JE PORUKA
-    //   sockets.forEach((webSocket) => 
-    //     webSocket.onmessage = (event) => {
-    //       setMessages((prevMessages) => [...prevMessages, JSON.parse(event.data)]);
-    //     }
-    //   )
+  // const data = [
+  //   {
+  //     name: '01/02/2024',
+  //     uv: 4000,
+  //     pv: 2400,
+  //   },
+  //   {
+  //     name: 'Page B',
+  //     uv: 3000,
+  //     pv: 1398,
+  //   },
+  //   {
+  //     name: 'Page C',
+  //     uv: 2000,
+  //     pv: 9800,
+  //   },
+  //   {
+  //     name: 'Page D',
+  //     uv: 2780,
+  //     pv: 3908,
+  //   },
+  //   {
+  //     name: 'Page E',
+  //     uv: 1890,
+  //     pv: 4800,
+  //   },
+  //   {
+  //     name: 'Page F',
+  //     uv: 2390,
+  //     pv: 3800,
+  //   },
+  //   {
+  //     name: 'Page G',
+  //     uv: 3490,
+  //     pv: 4300,
+  //   },
+  // ];
 
-    //   sockets.forEach((webSocket) => {
-    //     webSocket.onclose = () => {
-    //         console.log(`Attempting to reconnect to ${webSocket.url}...`);
-    //         setTimeout(() => connectSOckets(), 5000); 
-    //     }
-    //   })
-    // }
+  // useEffect(() => {
 
-    const connectSockets = () => {
-      const webSockets = urls.map((url) => {
-          const webSocket = CreateSocket(url);
-          OpenSocket(webSocket);
+  //   const connectSockets = () => {
+  //     const webSockets = urls.map((url) => {
+  //         const webSocket = CreateSocket(url);
+  //         OpenSocket(webSocket);
           
-          // Handle incoming messages
-          webSocket.onmessage = (event) => {
-              setMessages((prevMessages) => [...prevMessages, JSON.parse(event.data)]);
-          };
+  //         // Handle incoming messages
+  //         webSocket.onmessage = (event) => {
+  //             setMessages((prevMessages) => [...prevMessages, JSON.parse(event.data)]);
+  //         };
 
-          // Handle connection close and attempt to reconnect
-          webSocket.onclose = () => {
-              console.log(`Connection closed for ${url}. Attempting to reconnect...`);
-              setTimeout(() => {
-                  console.log(`Reconnecting to ${url}...`);
-                  connectSockets(); // Attempt to reconnect
-              }, 5000); // Retry after 5 seconds
-          };
+  //         // Handle connection close and attempt to reconnect
+  //         webSocket.onclose = () => {
+  //             console.log(`Connection closed for ${url}. Attempting to reconnect...`);
+  //             setTimeout(() => {
+  //                 console.log(`Reconnecting to ${url}...`);
+  //                 connectSockets(); // Attempt to reconnect
+  //             }, 5000); // Retry after 5 seconds
+  //         };
 
-          return webSocket;
-      });
+  //         return webSocket;
+  //     });
 
-      setSockets(webSockets);
-    };
+  //     setSockets(webSockets);
+  //   };
 
-    connectSockets();
+  //   connectSockets();
 
-    return () => {
-      sockets.forEach((webSocket) => CloseSocket(webSocket))
-    }
+  //   return () => {
+  //     sockets.forEach((webSocket) => CloseSocket(webSocket))
+  //   }
 
-  }, [])
+  // }, [])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setData((prevData) =>
+        prevData.map((entry) => ({
+          ...entry,
+          uv: Math.floor(Math.random() * 5000), // Randomly update `uv`
+          pv: Math.floor(Math.random() * 5000), // Randomly update `pv`
+        }))
+      );
+    }, 4000); // Update every 2 seconds
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
 
   return (
-    <div style={{display: 'flex', flexDirection: "coulmn", gap: "10px"}} >
+    <div style={{ height: 400 , width: 600, margin: "10px"}} >
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          //width={500}
+          //height={300}
+          data={data}
+          margin={{
+            top: 5,
+            right: 30,
+            left: 20,
+            bottom: 5,
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line type="monotone" dataKey="pv" stroke="#8884d8" activeDot={{ r: 8 }} />
+          <Line type="monotone" dataKey="uv" stroke="#82ca9d" />
+        </LineChart>
+      </ResponsiveContainer>
+      <div><label>affaafa1f</label></div>
+      <div style={{borderTop:"1px solid lightgray", margin:"20px 0px", borderRadius:"2px"} }></div>
       <div></div>
-      <div></div>
-      <div></div>
+      <div style={{borderTop:"1px solid lightgray", margin:"20px 0px", borderRadius:"2px"} }></div>
       <div></div>
     </div>
   );
