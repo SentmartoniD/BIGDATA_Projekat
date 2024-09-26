@@ -19,19 +19,23 @@ func main() {
 	}
 	defer client.Close()
 
-	coils, err := client.ReadCoils(0, 3)
-	if err != nil {
-		logger.Error("Failed to read coils:", err)
-		return
-	}
-	fmt.Println("Coils:", coils)
+	for {
+		coils, err := client.ReadCoils(0, 3)
+		if err != nil {
+			logger.Error("Failed to read coils:", err)
+			return
+		}
+		fmt.Println("Coils:", coils)
 
-	holding, err := client.ReadHoldingRegisters(0, 3)
-	if err != nil {
-		logger.Error("Failed to read holding:", err)
-		return
+		holding, err := client.ReadHoldingRegisters(0, 3)
+		if err != nil {
+			logger.Error("Failed to read holding:", err)
+			return
+		}
+		fmt.Println("Holding:", holding)
+
+		time.Sleep(2 * time.Second)
 	}
-	fmt.Println("Holding:", holding)
 
 	// _, err = client.WriteSingleCoil(5, 0xFF00)
 	// if err != nil {
