@@ -1,18 +1,29 @@
 package main
 
 import (
+	database "back-end/pkg/db"
+	"back-end/pkg/db/migrations"
+	"back-end/pkg/services/logger"
+	"back-end/pkg/services/modbus"
+	"back-end/pkg/services/websocket"
 	"fmt"
-	"scada/pkg/services/logger"
-	"scada/pkg/services/modbus"
+	"net/http"
+	"os"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	var address = "localhost:502"
+
+	loadAllConfiguration()
+	connectToDatabase()
+	openWebSockets()
+
 	var slaveId byte = 1
 	var timeout = 10 * time.Second
 
-	client, err := modbus.NewModbusClient(address, slaveId, timeout)
+	client, err := modbus.NewModbusClient(os.Getenv("SLAVE_ADRRESS"), slaveId, timeout)
 	if err != nil {
 		logger.Error("Failed to connect to Modbus:", err)
 		return
@@ -20,6 +31,7 @@ func main() {
 	defer client.Close()
 
 	for {
+		// digital output
 		coils, err := client.ReadCoils(0, 3)
 		if err != nil {
 			logger.Error("Failed to read coils:", err)
@@ -27,20 +39,79 @@ func main() {
 		}
 		fmt.Println("Coils:", coils)
 
-		holding, err := client.ReadHoldingRegisters(0, 3)
+		//digital input
+		digitalInputs, err := client.ReadDigitalInput(0, 3)
+		if err != nil {
+			logger.Error("Failed to digital inputs:", err)
+			return
+		}
+		fmt.Println("Digtal inputs:", digitalInputs)
+
+		// analog output
+		holdings, err := client.ReadHoldingRegisters(0, 3)
 		if err != nil {
 			logger.Error("Failed to read holding:", err)
 			return
 		}
-		fmt.Println("Holding:", holding)
+		fmt.Println("Holding:", holdings)
+
+		// analog input
+		analogInputs, err := client.ReadAnalogInput(0, 3)
+		if err != nil {
+			logger.Error("Failed to read analog inputs:", err)
+			return
+		}
+		fmt.Println("Analog inputs:", analogInputs)
 
 		time.Sleep(2 * time.Second)
 	}
+}
 
-	// _, err = client.WriteSingleCoil(5, 0xFF00)
-	// if err != nil {
-	// 	logger.Error("Failed to write to coil:", err)
-	// 	return
-	// }
-	// logger.Info("Successfully wrote to coil.")
+func loadAllConfiguration() {
+	godotenv.Load(".env")
+}
+
+func connectToDatabase() {
+
+	databaseConfig := database.NewDatabaseConfig()
+	err := database.Connect(databaseConfig)
+	if err != nil {
+		logger.Error("failed to connect to the Database")
+		os.Exit(1)
+	}
+	logger.Info("Connected to the Database")
+
+	err = migrations.ExecuteMigrations()
+	if err != nil {
+		logger.Error("failed to execute migrations")
+		os.Exit(2)
+	}
+	logger.Info("Migrations executed")
+}
+
+// func connectToSlavesWithModbus() {
+
+// 	var slaveAddress = os.Getenv("SLAVE_ADRRESS")
+// 	var slaveId byte = 1
+// 	var timeout = 10 * time.Second
+
+// 	client, err := modbus.NewModbusClient(slaveAddress, slaveId, timeout)
+// 	if err != nil {
+// 		logger.Error("Failed to connect to Modbus:", err)
+// 		return
+// 	}
+// 	defer client.Close()
+// }
+
+func openWebSockets() {
+
+	var webSockerPort = os.Getenv("WEBSOCKET_PORT")
+
+	logger.Info("WebSocket server started on ws://localhost" + webSockerPort)
+
+	http.HandleFunc("/", websocket.CreateWebSocketConnection)
+
+	if err := http.ListenAndServe(webSockerPort, nil); err != nil {
+		logger.Error("Error starting server:", err)
+	}
 }

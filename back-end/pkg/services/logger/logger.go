@@ -6,7 +6,7 @@ import (
 )
 
 // Logger is a basic logger instance
-var Logger = log.New(os.Stdout, "[MODBUS] ", log.LstdFlags)
+var Logger = log.New(os.Stdout, "[APP] ", log.LstdFlags)
 
 // Info logs informational messages
 func Info(v ...interface{}) {
