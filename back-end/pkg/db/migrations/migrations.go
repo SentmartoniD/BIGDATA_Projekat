@@ -18,7 +18,7 @@ func ExecuteMigrations() (err error) {
 	// AutoMigrate the models
 	if err := database.DB.
 		AutoMigrate(
-			&models.Primer{},
+			&models.Coil{},
 		); err != nil {
 		logger.Error("failed to auto-migrate")
 		return err

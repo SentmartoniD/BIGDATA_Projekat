@@ -18,21 +18,21 @@ func main() {
 
 	loadAllConfiguration()
 	connectToDatabase()
-	openWebSockets()
+	go openWebSockets()
 
 	var slaveId byte = 1
 	var timeout = 10 * time.Second
 
-	client, err := modbus.NewModbusClient(os.Getenv("SLAVE_ADRRESS"), slaveId, timeout)
+	modbusClient, err := modbus.NewModbusClient(os.Getenv("SLAVE_ADRRESS"), slaveId, timeout)
 	if err != nil {
 		logger.Error("Failed to connect to Modbus:", err)
 		return
 	}
-	defer client.Close()
+	defer modbusClient.Close()
 
 	for {
 		// digital output
-		coils, err := client.ReadCoils(0, 3)
+		coils, err := modbusClient.ReadCoils(0, 3)
 		if err != nil {
 			logger.Error("Failed to read coils:", err)
 			return
@@ -40,7 +40,7 @@ func main() {
 		fmt.Println("Coils:", coils)
 
 		//digital input
-		digitalInputs, err := client.ReadDigitalInput(0, 3)
+		digitalInputs, err := modbusClient.ReadDigitalInput(0, 3)
 		if err != nil {
 			logger.Error("Failed to digital inputs:", err)
 			return
@@ -48,7 +48,7 @@ func main() {
 		fmt.Println("Digtal inputs:", digitalInputs)
 
 		// analog output
-		holdings, err := client.ReadHoldingRegisters(0, 3)
+		holdings, err := modbusClient.ReadHoldingRegisters(0, 3)
 		if err != nil {
 			logger.Error("Failed to read holding:", err)
 			return
@@ -56,14 +56,19 @@ func main() {
 		fmt.Println("Holding:", holdings)
 
 		// analog input
-		analogInputs, err := client.ReadAnalogInput(0, 3)
+		analogInputs, err := modbusClient.ReadAnalogInput(0, 3)
 		if err != nil {
 			logger.Error("Failed to read analog inputs:", err)
 			return
 		}
 		fmt.Println("Analog inputs:", analogInputs)
 
-		time.Sleep(2 * time.Second)
+		websocket.SendMessage(fmt.Sprintf("Coils: %v", coils))
+		websocket.SendMessage(fmt.Sprintf("Digital inputs: %v", digitalInputs))
+		websocket.SendMessage(fmt.Sprintf("Holdings: %v", holdings))
+		websocket.SendMessage(fmt.Sprintf("Analog inputs: %v", analogInputs))
+
+		time.Sleep(5 * time.Second)
 	}
 }
 
