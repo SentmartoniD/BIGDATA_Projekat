@@ -1,12 +1,15 @@
 import './App.css';
 import { useEffect, useState } from 'react';
-import { CreateSocket, CloseSocket, OpenSocket} from './services/SlaveService';
+import { CreateSocket, CloseSocket, OpenSocket } from './services/SlaveService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 function App() {
 
   const [sockets, setSockets] = useState([]);
   const [messages, setMessages] = useState([]);
+
+  const [socket, setSocket] = useState();
+  const [message, setMessage] = useState();
 
   const urls = [
     'ws://localhost:8090/ws',
@@ -96,24 +99,26 @@ function App() {
 
   //   const connectSockets = () => {
   //     const webSockets = urls.map((url) => {
-  //         const webSocket = CreateSocket(url);
-  //         OpenSocket(webSocket);
-          
-  //         // Handle incoming messages
-  //         webSocket.onmessage = (event) => {
-  //             setMessages((prevMessages) => [...prevMessages, JSON.parse(event.data)]);
-  //         };
+  //       const webSocket = CreateSocket(url);
+  //       OpenSocket(webSocket);
 
-  //         // Handle connection close and attempt to reconnect
-  //         webSocket.onclose = () => {
-  //             console.log(`Connection closed for ${url}. Attempting to reconnect...`);
-  //             setTimeout(() => {
-  //                 console.log(`Reconnecting to ${url}...`);
-  //                 connectSockets(); // Attempt to reconnect
-  //             }, 5000); // Retry after 5 seconds
-  //         };
+  //       // Handle incoming messages
+  //       webSocket.onmessage = (event) => {
+  //         console.log("---------mmmm")
+  //         console.log(event.data)
+  //         setMessages((prevMessages) => [...prevMessages, JSON.parse(event.data)]);
+  //       };
 
-  //         return webSocket;
+  //       // Handle connection close and attempt to reconnect
+  //       webSocket.onclose = () => {
+  //         console.log(`Connection closed for ${url}. Attempting to reconnect...`);
+  //         setTimeout(() => {
+  //           console.log(`Reconnecting to ${url}...`);
+  //           connectSockets(); // Attempt to reconnect
+  //         }, 5000); // Retry after 5 seconds
+  //       };
+
+  //       return webSocket;
   //     });
 
   //     setSockets(webSockets);
@@ -128,48 +133,61 @@ function App() {
   // }, [])
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setData((prevData) =>
-        prevData.map((entry) => ({
-          ...entry,
-          uv: Math.floor(Math.random() * 5000), // Randomly update `uv`
-          pv: Math.floor(Math.random() * 5000), // Randomly update `pv`
-        }))
-      );
-    }, 4000); // Update every 2 seconds
+    const webSocket = CreateSocket('ws://localhost:8090/ws');
 
-    return () => clearInterval(interval); // Cleanup on unmount
-  }, []);
+    OpenSocket(webSocket);
+
+    webSocket.onmessage = (event) => {
+      console.log("---------mmmm")
+      console.log(event.data)
+      //setMessages((prevMessages) => [...prevMessages, JSON.parse(event.data)]);
+    };
+  }, [])
+
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setData((prevData) =>
+  //       prevData.map((entry) => ({
+  //         ...entry,
+  //         uv: Math.floor(Math.random() * 5000), // Randomly update `uv`
+  //         pv: Math.floor(Math.random() * 5000), // Randomly update `pv`
+  //       }))
+  //     );
+  //   }, 4000); // Update every 2 seconds
+
+  //   return () => clearInterval(interval); // Cleanup on unmount
+  // }, []);
 
   return (
-    <div style={{ height: 400 , width: 600, margin: "10px"}} >
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          //width={500}
-          //height={300}
-          data={data}
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="pv" stroke="#8884d8" activeDot={{ r: 8 }} />
-          <Line type="monotone" dataKey="uv" stroke="#82ca9d" />
-        </LineChart>
-      </ResponsiveContainer>
-      <div><label>affaafa1f</label></div>
-      <div style={{borderTop:"1px solid lightgray", margin:"20px 0px", borderRadius:"2px"} }></div>
-      <div></div>
-      <div style={{borderTop:"1px solid lightgray", margin:"20px 0px", borderRadius:"2px"} }></div>
-      <div></div>
-    </div>
+    // <div style={{ height: 400, width: 600, margin: "10px" }} >
+    //   <ResponsiveContainer width="100%" height="100%">
+    //     <LineChart
+    //       //width={500}
+    //       //height={300}
+    //       data={data}
+    //       margin={{
+    //         top: 5,
+    //         right: 30,
+    //         left: 20,
+    //         bottom: 5,
+    //       }}
+    //     >
+    //       <CartesianGrid strokeDasharray="3 3" />
+    //       <XAxis dataKey="name" />
+    //       <YAxis />
+    //       <Tooltip />
+    //       <Legend />
+    //       <Line type="monotone" dataKey="pv" stroke="#8884d8" activeDot={{ r: 8 }} />
+    //       <Line type="monotone" dataKey="uv" stroke="#82ca9d" />
+    //     </LineChart>
+    //   </ResponsiveContainer>
+    //   <div><label>affaafa1f</label></div>
+    //   <div style={{ borderTop: "1px solid lightgray", margin: "20px 0px", borderRadius: "2px" }}></div>
+    //   <div></div>
+    //   <div style={{ borderTop: "1px solid lightgray", margin: "20px 0px", borderRadius: "2px" }}></div>
+    //   <div></div>
+    // </div>
+    <label>hi</label>
   );
 }
 
