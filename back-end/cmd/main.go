@@ -24,16 +24,9 @@ func main() {
 
 	loadAllConfiguration()
 	connectToDatabase()
-	go openWebSockets()
-
-	coilsService := coils.InitCoilsService()
-	digitalInputsService := digitalInputs.InitDigitalInputsService()
-	holdingsService := holdings.InitHoldingsService()
-	analogInputsService := analogInputs.InitAnalogInputsService()
 
 	var slaveId byte = 1
 	var timeout = 10 * time.Second
-
 	modbusClient, err := modbus.NewModbusClient(os.Getenv("SLAVE_ADRRESS"), slaveId, timeout)
 	if err != nil {
 		logger.Error("Failed to connect to Modbus:", err)
@@ -41,9 +34,16 @@ func main() {
 	}
 	defer modbusClient.Close()
 
+	go openWebSockets(modbusClient)
+
+	coilsService := coils.InitCoilsService()
+	digitalInputsService := digitalInputs.InitDigitalInputsService()
+	holdingsService := holdings.InitHoldingsService()
+	analogInputsService := analogInputs.InitAnalogInputsService()
+
 	for {
 		// digital output
-		coils, err := modbusClient.ReadCoils(0, 3)
+		coils, err := modbusClient.ReadCoils(0, 8)
 		if err != nil {
 			logger.Error("Failed to read coils:", err)
 			return
@@ -55,6 +55,11 @@ func main() {
 			Register0: coils[0],
 			Register1: coils[1],
 			Register2: coils[2],
+			Register3: coils[3],
+			Register4: coils[4],
+			Register5: coils[5],
+			Register6: coils[6],
+			Register7: coils[7],
 			Timestamp: time.Now(),
 		}
 		coil, err = coilsService.CreateCoil(coil)
@@ -122,11 +127,32 @@ func main() {
 		}
 		fmt.Println("Analog inputs:", analogInput)
 
-		websocket.SendMessage(fmt.Sprintf("Coils %v %v %v %v", coil.Register0, coil.Register1, coil.Register2, coil.Timestamp.Format("2006-01-02 15:04:05")))
-		websocket.SendMessage(fmt.Sprintf("DigitalInputs %v %v %v %v", digitalInput.Register0, digitalInput.Register1, digitalInput.Register2, digitalInput.Timestamp.Format("2006-01-02 15:04:05")))
+		websocket.SendMessage(fmt.Sprintf("Coils %v %v %v %v %v %v %v %v %v",
+			coil.Register0, coil.Register1, coil.Register2, coil.Register3,
+			coil.Register4, coil.Register5, coil.Register6, coil.Register7,
+			coil.Timestamp.Format("2006-01-02 15:04:05")))
+		websocket.SendMessage(fmt.Sprintf("DigitalInputs %v %v", digitalInput.Register0, digitalInput.Timestamp.Format("2006-01-02 15:04:05")))
 		websocket.SendMessage(fmt.Sprintf("Holdings %v %v %v %v", holding.Register0, holding.Register1, holding.Register2, holding.Timestamp.Format("2006-01-02 15:04:05")))
-		websocket.SendMessage(fmt.Sprintf("AnalogInputs %v %v %v %v", analogInput.Register0, analogInput.Register1, analogInput.Register2, analogInput.Timestamp.Format("2006-01-02 15:04:05")))
+		// ANALOG INPUTS
+		minAanalogInputValues, err := analogInputsService.GetMinValueForRegisters()
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		avgAanalogInputValues, err := analogInputsService.GetAvgValueForRegisters()
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		maxAanalogInputValues, err := analogInputsService.GetMaxValueForRegisters()
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		websocket.SendMessage(fmt.Sprintf("AnalogInputs %v %v %v %v %v %v %v %v %v %v %v %v %v",
+			analogInput.Register0, analogInput.Register1, analogInput.Register2,
+			minAanalogInputValues[0], minAanalogInputValues[1], minAanalogInputValues[2],
+			avgAanalogInputValues[0], avgAanalogInputValues[1], avgAanalogInputValues[2],
+			maxAanalogInputValues[0], maxAanalogInputValues[1], maxAanalogInputValues[2], analogInput.Timestamp.Format("2006-01-02 15:04:05")))
 
+		// GET DATA FROM SLAVE EVERY 5 SECONDS
 		time.Sleep(5 * time.Second)
 	}
 }
@@ -167,13 +193,15 @@ func connectToDatabase() {
 // 	defer client.Close()
 // }
 
-func openWebSockets() {
+func openWebSockets(modbusClient *modbus.ModbusClient) {
 
 	var webSockerPort = os.Getenv("WEBSOCKET_PORT")
 
 	logger.Info("WebSocket server started on ws://localhost" + webSockerPort)
 
-	http.HandleFunc("/", websocket.CreateWebSocketConnection)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		websocket.CreateWebSocketConnection(w, r, modbusClient)
+	})
 
 	if err := http.ListenAndServe(webSockerPort, nil); err != nil {
 		logger.Error("Error starting server:", err)
