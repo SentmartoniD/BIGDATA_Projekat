@@ -18,6 +18,18 @@ function App() {
     'ws://localhost:8093/ws',
   ]
 
+  const [analogInputs, setAnalogInputs] = useState(
+    Array.from({ length: 5 }, () => ({ name: "", r0: "", r1: "", r2: "" }))
+  );
+
+  const addInput = (newData) => {
+    setAnalogInputs((prevInputs) => {
+      // Add new data to the front and slice to maintain only the last 5 elements
+      const updatedInputs = [{ ...newData }, ...prevInputs.slice(0, 4)];
+      return updatedInputs;
+    });
+  };
+
   const [data, setData] = useState([
     {
       name: '01/02/2024',
@@ -56,44 +68,6 @@ function App() {
     },
     // ... more initial data
   ]);
-
-  // const data = [
-  //   {
-  //     name: '01/02/2024',
-  //     uv: 4000,
-  //     pv: 2400,
-  //   },
-  //   {
-  //     name: 'Page B',
-  //     uv: 3000,
-  //     pv: 1398,
-  //   },
-  //   {
-  //     name: 'Page C',
-  //     uv: 2000,
-  //     pv: 9800,
-  //   },
-  //   {
-  //     name: 'Page D',
-  //     uv: 2780,
-  //     pv: 3908,
-  //   },
-  //   {
-  //     name: 'Page E',
-  //     uv: 1890,
-  //     pv: 4800,
-  //   },
-  //   {
-  //     name: 'Page F',
-  //     uv: 2390,
-  //     pv: 3800,
-  //   },
-  //   {
-  //     name: 'Page G',
-  //     uv: 3490,
-  //     pv: 4300,
-  //   },
-  // ];
 
   // useEffect(() => {
 
@@ -140,6 +114,11 @@ function App() {
     webSocket.onmessage = (event) => {
       console.log("---------message--------")
       console.log(event.data)
+      const parts = event.data.split(" ");
+      const values = parts.slice(1, 4).map(Number); // Convert to integers
+      const timestamp = parts.slice(4).join(" "); // Join the remaining parts for the timestam
+      console.log("values", values)
+      console.log("trimestamp", timestamp)
       //setMessages((prevMessages) => [...prevMessages, JSON.parse(event.data)]);
     };
   }, [])
@@ -187,7 +166,7 @@ function App() {
     //   <div style={{ borderTop: "1px solid lightgray", margin: "20px 0px", borderRadius: "2px" }}></div>
     //   <div></div>
     // </div>
-    <label>hi</label>
+    <h1>sqq</h1>
   );
 }
 

@@ -122,10 +122,10 @@ func main() {
 		}
 		fmt.Println("Analog inputs:", analogInput)
 
-		websocket.SendMessage(fmt.Sprintf("Coils: %v %v %v %v", coil.Register0, coil.Register1, coil.Register2, coil.Timestamp.Format("2006-01-02 15:04:05")))
-		websocket.SendMessage(fmt.Sprintf("Digital inputs: %v %v %v %v", digitalInput.Register0, digitalInput.Register1, digitalInput.Register2, digitalInput.Timestamp.Format("2006-01-02 15:04:05")))
-		websocket.SendMessage(fmt.Sprintf("Holdings: %v %v %v %v", holding.Register0, holding.Register1, holding.Register2, holding.Timestamp.Format("2006-01-02 15:04:05")))
-		websocket.SendMessage(fmt.Sprintf("Analog inputs: %v %v %v %v", analogInput.Register0, analogInput.Register1, analogInput.Register2, analogInput.Timestamp.Format("2006-01-02 15:04:05")))
+		websocket.SendMessage(fmt.Sprintf("Coils %v %v %v %v", coil.Register0, coil.Register1, coil.Register2, coil.Timestamp.Format("2006-01-02 15:04:05")))
+		websocket.SendMessage(fmt.Sprintf("DigitalInputs %v %v %v %v", digitalInput.Register0, digitalInput.Register1, digitalInput.Register2, digitalInput.Timestamp.Format("2006-01-02 15:04:05")))
+		websocket.SendMessage(fmt.Sprintf("Holdings %v %v %v %v", holding.Register0, holding.Register1, holding.Register2, holding.Timestamp.Format("2006-01-02 15:04:05")))
+		websocket.SendMessage(fmt.Sprintf("AnalogInputs %v %v %v %v", analogInput.Register0, analogInput.Register1, analogInput.Register2, analogInput.Timestamp.Format("2006-01-02 15:04:05")))
 
 		time.Sleep(5 * time.Second)
 	}
