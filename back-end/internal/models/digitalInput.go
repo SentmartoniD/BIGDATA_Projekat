@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type Coil struct {
+type DigitalInput struct {
 	ID        string    `gorm:"type:varchar(36);primaryKey"`
 	Register0 bool      `gorm:"column:register0"`
 	Register1 bool      `gorm:"column:register1"`
@@ -15,13 +15,13 @@ type Coil struct {
 	Timestamp time.Time `gorm:"column:timestamp"`
 }
 
-func (Coil) TableName() string {
-	return "coil"
+func (DigitalInput) TableName() string {
+	return "digital_input"
 }
 
-func (coil *Coil) BeforeCreate(tx *gorm.DB) (err error) {
-	if coil.ID == "" {
-		coil.ID = uuid.NewString()
+func (digitalInput *DigitalInput) BeforeCreate(tx *gorm.DB) (err error) {
+	if digitalInput.ID == "" {
+		digitalInput.ID = uuid.NewString()
 	}
 	return
 }

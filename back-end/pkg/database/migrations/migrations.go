@@ -2,7 +2,7 @@ package migrations
 
 import (
 	"back-end/internal/models"
-	database "back-end/pkg/db"
+	"back-end/pkg/database"
 	"back-end/pkg/services/logger"
 	_ "embed"
 )
@@ -19,6 +19,9 @@ func ExecuteMigrations() (err error) {
 	if err := database.DB.
 		AutoMigrate(
 			&models.Coil{},
+			&models.DigitalInput{},
+			&models.Holding{},
+			&models.AnalogInput{},
 		); err != nil {
 		logger.Error("failed to auto-migrate")
 		return err

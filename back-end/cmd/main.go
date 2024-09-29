@@ -1,8 +1,13 @@
 package main
 
 import (
-	database "back-end/pkg/db"
-	"back-end/pkg/db/migrations"
+	"back-end/internal/models"
+	"back-end/pkg/database"
+	"back-end/pkg/database/migrations"
+	"back-end/pkg/services/analogInputs"
+	"back-end/pkg/services/coils"
+	"back-end/pkg/services/digitalInputs"
+	"back-end/pkg/services/holdings"
 	"back-end/pkg/services/logger"
 	"back-end/pkg/services/modbus"
 	"back-end/pkg/services/websocket"
@@ -11,6 +16,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
 
@@ -19,6 +25,11 @@ func main() {
 	loadAllConfiguration()
 	connectToDatabase()
 	go openWebSockets()
+
+	coilsService := coils.InitCoilsService()
+	digitalInputsService := digitalInputs.InitDigitalInputsService()
+	holdingsService := holdings.InitHoldingsService()
+	analogInputsService := analogInputs.InitAnalogInputsService()
 
 	var slaveId byte = 1
 	var timeout = 10 * time.Second
@@ -39,13 +50,38 @@ func main() {
 		}
 		fmt.Println("Coils:", coils)
 
+		coil := &models.Coil{
+			ID:        uuid.NewString(),
+			Register0: coils[0],
+			Register1: coils[1],
+			Register2: coils[2],
+			Timestamp: time.Now(),
+		}
+		coil, err = coilsService.CreateCoil(coil)
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		fmt.Println(coil)
+
 		//digital input
 		digitalInputs, err := modbusClient.ReadDigitalInput(0, 3)
 		if err != nil {
-			logger.Error("Failed to digital inputs:", err)
+			logger.Error("Failed to read digital inputs:", err)
 			return
 		}
-		fmt.Println("Digtal inputs:", digitalInputs)
+
+		digitalInput := &models.DigitalInput{
+			ID:        uuid.NewString(),
+			Register0: digitalInputs[0],
+			Register1: digitalInputs[1],
+			Register2: digitalInputs[2],
+			Timestamp: time.Now(),
+		}
+		digitalInput, err = digitalInputsService.CreateDigitalInput(digitalInput)
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		fmt.Println("Digtal inputs:", digitalInput)
 
 		// analog output
 		holdings, err := modbusClient.ReadHoldingRegisters(0, 3)
@@ -53,7 +89,19 @@ func main() {
 			logger.Error("Failed to read holding:", err)
 			return
 		}
-		fmt.Println("Holding:", holdings)
+
+		holding := &models.Holding{
+			ID:        uuid.NewString(),
+			Register0: holdings[0],
+			Register1: holdings[1],
+			Register2: holdings[2],
+			Timestamp: time.Now(),
+		}
+		holding, err = holdingsService.CreateHolding(holding)
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		fmt.Println("Holding:", holding)
 
 		// analog input
 		analogInputs, err := modbusClient.ReadAnalogInput(0, 3)
@@ -61,12 +109,23 @@ func main() {
 			logger.Error("Failed to read analog inputs:", err)
 			return
 		}
-		fmt.Println("Analog inputs:", analogInputs)
+		analogInput := &models.AnalogInput{
+			ID:        uuid.NewString(),
+			Register0: analogInputs[0],
+			Register1: analogInputs[1],
+			Register2: analogInputs[2],
+			Timestamp: time.Now(),
+		}
+		analogInput, err = analogInputsService.CreateAnalogInput(analogInput)
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		fmt.Println("Analog inputs:", analogInput)
 
-		websocket.SendMessage(fmt.Sprintf("Coils: %v", coils))
-		websocket.SendMessage(fmt.Sprintf("Digital inputs: %v", digitalInputs))
-		websocket.SendMessage(fmt.Sprintf("Holdings: %v", holdings))
-		websocket.SendMessage(fmt.Sprintf("Analog inputs: %v", analogInputs))
+		websocket.SendMessage(fmt.Sprintf("Coils: %v %v %v %v", coil.Register0, coil.Register1, coil.Register2, coil.Timestamp.Format("2006-01-02 15:04:05")))
+		websocket.SendMessage(fmt.Sprintf("Digital inputs: %v %v %v %v", digitalInput.Register0, digitalInput.Register1, digitalInput.Register2, digitalInput.Timestamp.Format("2006-01-02 15:04:05")))
+		websocket.SendMessage(fmt.Sprintf("Holdings: %v %v %v %v", holding.Register0, holding.Register1, holding.Register2, holding.Timestamp.Format("2006-01-02 15:04:05")))
+		websocket.SendMessage(fmt.Sprintf("Analog inputs: %v %v %v %v", analogInput.Register0, analogInput.Register1, analogInput.Register2, analogInput.Timestamp.Format("2006-01-02 15:04:05")))
 
 		time.Sleep(5 * time.Second)
 	}
