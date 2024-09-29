@@ -138,7 +138,7 @@ function App() {
     OpenSocket(webSocket);
 
     webSocket.onmessage = (event) => {
-      console.log("---------mmmm")
+      console.log("---------message--------")
       console.log(event.data)
       //setMessages((prevMessages) => [...prevMessages, JSON.parse(event.data)]);
     };
