@@ -89,7 +89,7 @@ func main() {
 		fmt.Println("Digtal inputs:", digitalInput)
 
 		// analog output
-		holdings, err := modbusClient.ReadHoldingRegisters(0, 3)
+		holdings, err := modbusClient.ReadHoldingRegisters(0, 6)
 		if err != nil {
 			logger.Error("Failed to read holding:", err)
 			return
@@ -100,6 +100,9 @@ func main() {
 			Register0: holdings[0],
 			Register1: holdings[1],
 			Register2: holdings[2],
+			Register3: holdings[3],
+			Register4: holdings[4],
+			Register5: holdings[5],
 			Timestamp: time.Now(),
 		}
 		holding, err = holdingsService.CreateHolding(holding)
@@ -131,8 +134,13 @@ func main() {
 			coil.Register0, coil.Register1, coil.Register2, coil.Register3,
 			coil.Register4, coil.Register5, coil.Register6, coil.Register7,
 			coil.Timestamp.Format("2006-01-02 15:04:05")))
+
 		websocket.SendMessage(fmt.Sprintf("DigitalInputs %v %v", digitalInput.Register0, digitalInput.Timestamp.Format("2006-01-02 15:04:05")))
-		websocket.SendMessage(fmt.Sprintf("Holdings %v %v %v %v", holding.Register0, holding.Register1, holding.Register2, holding.Timestamp.Format("2006-01-02 15:04:05")))
+
+		websocket.SendMessage(fmt.Sprintf("Holdings %v %v %v %v %v %v %v",
+			holding.Register0, holding.Register1, holding.Register2,
+			holding.Register3, holding.Register4, holding.Register5,
+			holding.Timestamp.Format("2006-01-02 15:04:05")))
 		// ANALOG INPUTS
 		minAanalogInputValues, err := analogInputsService.GetMinValueForRegisters()
 		if err != nil {

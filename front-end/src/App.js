@@ -7,18 +7,9 @@ import { PieChart, Pie, Sector, Cell } from 'recharts';
 
 function App() {
 
-  const [sockets, setSockets] = useState([]);
-  const [messages, setMessages] = useState([]);
-
   const [socket, setSocket] = useState();
-  const [message, setMessage] = useState();
 
-  const urls = [
-    'ws://localhost:8090/ws',
-    'ws://localhost:8091/ws',
-    'ws://localhost:8092/ws',
-    'ws://localhost:8093/ws',
-  ]
+  const url = 'ws://localhost:8090/ws'
 
   // ANALOG INPUTS
   const [analogInputs, setAnalogInputs] = useState([])
@@ -28,16 +19,24 @@ function App() {
 
   //DIGITAL INPUTS
   const [digitalInputs, setDigitalInputs] = useState([])
-  const [digitalInputTimestamp, setDigitalInputTimestamp] = useState(null)
-  const [digitalInputCurrentValue, setDigitalInputCurrentValue] = useState()
+  const [digitalInputCurrentValue, setDigitalInputCurrentValue] = useState(0)
   const [timer, setTimer] = useState(0);
 
   // COILS 
   const [coils, setCoils] = useState({})
   const [coilsTimestamp, setCoilsTimestamp] = useState();
 
+  //HOLDINGS
+  const [holdings, setHoldings] = useState([])
+  const [holdingRegister0, setHoldingRegister0] = useState()
+  const [holdingRegister1, setHoldingRegister1] = useState()
+  const [holdingRegister2, setHoldingRegister2] = useState()
+  const [holdingRegister3, setHoldingRegister3] = useState()
+  const [holdingRegister4, setHoldingRegister4] = useState()
+  const [holdingRegister5, setHoldingRegister5] = useState()
+
   useEffect(() => {
-    const webSocket = CreateSocket('ws://localhost:8090/ws');
+    const webSocket = CreateSocket(url);
     OpenSocket(webSocket);
     setSocket(webSocket)
 
@@ -58,19 +57,29 @@ function App() {
         const values = parts.slice(1, 2).map(String);
         const timestamp = parts.slice(2).join(" ");
         const register0Value = values[0] === "false" ? 0 : 1;
-        setDigitalInputCurrentValue(values[0] === "false" ? 0 : 1)
+
+        // console.log("digitalInputCurrentValue", digitalInputCurrentValue)
+
+        // console.log("register0Value", register0Value)
+        // console.log("digitalInputs", digitalInputs[digitalInputs.length - 1])
+        // if (digitalInputCurrentValue !== register0Value) {
+        //   console.log("usao!")
+        //   setTimer(0)
+        // }
+        // setDigitalInputCurrentValue(register0Value)
+
+        setDigitalInputCurrentValue((prevValue) => {
+          // Use the previous value for comparison
+          if (prevValue !== register0Value) {
+            setTimer(0); // Reset the timer if the value has changed
+          }
+          return register0Value; // Update to the new value
+        });
+
         setDigitalInputs((prevInputs) => [
           { timestamp: timestamp, "Register0": register0Value },
           ...prevInputs.slice(0, 5),
         ]);
-
-        // console.log(register0Value)
-        // console.log(digitalInputs > 0 ? digitalInputs[5]["Register0"] : "nope")
-        // console.log("HI, 111111")
-        // if (digitalInputs[5]["Register0"] !== register0Value) {
-        //   console.log("HI, 222222222")
-        //   setTimer(0);
-        // }
       }
       if (parts[0] === "Coils") {
         const values = parts.slice(1, 9).map(String);
@@ -82,6 +91,15 @@ function App() {
             "Register0": values[0], "Register1": values[1], "Register2": values[2], "Register3": values[3],
             "Register4": values[4], "Register5": values[5], "Register6": values[6], "Register7": values[7],
           });
+      }
+      if (parts[0] === "Holdings") {
+        const values = parts.slice(1, 7).map(Number);
+        const timestamp = parts.slice(7).join(" ");
+        console.log(timestamp)
+        setHoldings((prevInputs) => [
+          { timestamp: timestamp, Register0: Number(values[0]), Register1: Number(values[1]), Register2: Number(values[2]), Register3: Number(values[3]), Register4: Number(values[4]), Register5: Number(values[5]) },
+          ...prevInputs.slice(0, 5),
+        ]);
       }
     };
 
@@ -101,13 +119,32 @@ function App() {
   }, []);
 
   const handleChangeState = (index) => {
-    const value = coils["Register" + index] === 1 ? 0 : 1
-    console.log("value", value)
+    const value = coils["Register" + index] === "true" ? 0 : 1
     if (socket) {
-      const message = 'value: ' + value + " registerIndex " + index
+      const message = 'Coil value: ' + value + " registerIndex " + index
       socket.send(message);
     }
   };
+
+  const handleHoldingChange = (index) => {
+    let registerValue;
+    if (index === 0)
+      registerValue = holdingRegister0
+    else if (index === 1)
+      registerValue = holdingRegister1
+    else if (index === 2)
+      registerValue = holdingRegister2
+    else if (index === 3)
+      registerValue = holdingRegister3
+    else if (index === 4)
+      registerValue = holdingRegister4
+    else if (index === 5)
+      registerValue = holdingRegister5
+    if (socket) {
+      const message = "Holdings value: " + registerValue + " registerIndex: " + index
+      socket.send(message);
+    }
+  }
 
   return (
     <div>
@@ -186,7 +223,7 @@ function App() {
           </ResponsiveContainer>
         </div>
         <div style={{ marginLeft: "50px", marginTop: "30px" }} >
-          <label style={{ marginLeft: "30px", border: "1px solid #8884d8", padding: "10px" }} >Register0 DURATION: {timer} s</label>
+          <label style={{ marginLeft: "30px", border: "1px solid #8884d8", padding: "10px" }} >Register0 STATE DURATION: {timer} s</label>
         </div>
       </div>
       <div style={{ borderTop: "1px solid lightgray", margin: "40px 70px", borderRadius: "2px" }}></div>
@@ -207,7 +244,7 @@ function App() {
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  backgroundColor: coils["Register" + index] === "true" ? '#FFCCCB' : 'black',
+                  backgroundColor: coils["Register" + index] === "true" ? '#FFC229' : 'black',
                   color: 'white',
                   fontSize: '24px',
                   fontWeight: 'bold',
@@ -229,6 +266,60 @@ function App() {
       <div style={{ borderTop: "1px solid lightgray", margin: "40px 70px", borderRadius: "2px" }}></div>
       <div>
         <h2 style={{ marginLeft: "40px" }} >HOLDINGS</h2>
+        <div style={{ height: 300, width: 1200, margin: "10px" }} >
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={holdings}
+              margin={{
+                top: 5,
+                right: 30,
+                left: 20,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="timestamp"
+                tick={{ fontSize: 9 }}
+                reversed={false}
+              />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="Register0" stroke="#9f33ff" activeDot={{ r: 8 }} />
+              <Line type="monotone" dataKey="Register1" stroke="#ffd733" />
+              <Line type="monotone" dataKey="Register2" stroke="#b5ff33" />
+              <Line type="monotone" dataKey="Register3" stroke="#c98b16" />
+              <Line type="monotone" dataKey="Register4" stroke="#33b8ff" />
+              <Line type="monotone" dataKey="Register5" stroke="#ff3358" />
+
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{ marginLeft: "50px", marginTop: "30px" }} >
+          <div>
+            <label style={{ color: "#9f33ff" }} >Register0 : </label>
+            <input type='number' value={holdingRegister0} onChange={(e) => setHoldingRegister0(e.target.value)} ></input>
+            <button onClick={() => handleHoldingChange(0)} >Change Register0</button>
+            <label style={{ marginLeft: "30px", color: "#ffd733" }} >Register1 : </label>
+            <input type='number' value={holdingRegister1} onChange={(e) => setHoldingRegister1(e.target.value)} ></input>
+            <button onClick={() => handleHoldingChange(1)} >Change Register1</button>
+            <label style={{ marginLeft: "30px", color: "#b5ff33" }} >Register2 : </label>
+            <input type='number' value={holdingRegister2} onChange={(e) => setHoldingRegister2(e.target.value)} ></input>
+            <button onClick={() => handleHoldingChange(2)} >Change Register2</button>
+          </div>
+          <div style={{ marginTop: "20px" }} >
+            <label style={{ color: "#c98b16" }} >Register3 : </label>
+            <input type='number' value={holdingRegister3} onChange={(e) => setHoldingRegister3(e.target.value)} ></input>
+            <button onClick={() => handleHoldingChange(3)} >Change Register3</button>
+            <label style={{ marginLeft: "30px", color: "#33b8ff" }} >Register4 : </label>
+            <input type='number' value={holdingRegister4} onChange={(e) => setHoldingRegister4(e.target.value)} ></input>
+            <button onClick={() => handleHoldingChange(4)} >Change Register4</button>
+            <label style={{ marginLeft: "30px", color: "#ff3358" }} >Register5 : </label>
+            <input type='number' value={holdingRegister5} onChange={(e) => setHoldingRegister5(e.target.value)} ></input>
+            <button onClick={() => handleHoldingChange(5)} >Change Register5</button>
+          </div>
+        </div>
       </div>
       <div style={{ borderTop: "1px solid lightgray", margin: "40px 70px", borderRadius: "2px" }}></div>
     </div >

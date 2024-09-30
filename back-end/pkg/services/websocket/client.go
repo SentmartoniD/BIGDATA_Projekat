@@ -60,31 +60,55 @@ func SendMessage(message string) {
 
 func HandleMessage(msg string, conn *websocket.Conn, modbusClient *modbus.ModbusClient) {
 	parts := strings.Split(msg, " ")
-	if len(parts) < 4 {
+	if len(parts) < 5 {
 		logger.Error("Invalid message format")
 		return
 	}
+	fmt.Println("-------------------")
+	fmt.Println(parts[0])
+	if parts[0] == "Coil" {
+		value := parts[2]
+		index := parts[4]
 
-	value := parts[1]
-	index := parts[3]
+		var coilValue uint16
+		if value == "1" {
+			coilValue = 0xFF00
+		} else {
+			coilValue = 0x0000
+		}
 
-	var coilValue uint16
-	if value == "1" {
-		coilValue = 0xFF00
-	} else {
-		coilValue = 0x0000
+		var coilIndex uint16
+		fmt.Sscanf(index, "%d", &coilIndex)
+
+		modbusAddress := coilIndex
+
+		res, err := modbusClient.WriteSingleCoil(modbusAddress, coilValue)
+		if err != nil {
+			logger.Error("Failed to write to Modbus:", err)
+			return
+		}
+
+		logger.Info("Modbus slave result: ", res)
 	}
+	if parts[0] == "Holdings" {
+		value := parts[2]
+		index := parts[4]
+		var holdingValue uint16
+		fmt.Sscanf(value, "%d", &holdingValue)
+		var holdingIndex uint16
+		fmt.Sscanf(index, "%d", &holdingIndex)
 
-	var coilIndex uint16
-	fmt.Sscanf(index, "%d", &coilIndex)
+		modbusAddress := holdingIndex
 
-	modbusAddress := coilIndex
+		values := make([]byte, 2)
+		values[0] = byte(holdingValue >> 8)
+		values[1] = byte(holdingValue & 0xFF)
 
-	res, err := modbusClient.WriteSingleCoil(modbusAddress, coilValue)
-	if err != nil {
-		logger.Error("Failed to write to Modbus:", err)
-		return
+		res, err := modbusClient.WriteMultipleRegisters(modbusAddress, 1, values)
+		if err != nil {
+			logger.Error("Failed to write to Modbus:", err)
+			return
+		}
+		logger.Info("Modbus slave result: ", res)
 	}
-
-	logger.Info("Modbus slave result: ", res)
 }

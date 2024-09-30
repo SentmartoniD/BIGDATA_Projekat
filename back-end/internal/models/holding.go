@@ -12,6 +12,9 @@ type Holding struct {
 	Register0 uint16    `gorm:"column:register0"`
 	Register1 uint16    `gorm:"column:register1"`
 	Register2 uint16    `gorm:"column:register2"`
+	Register3 uint16    `gorm:"column:register3"`
+	Register4 uint16    `gorm:"column:register4"`
+	Register5 uint16    `gorm:"column:register5"`
 	Timestamp time.Time `gorm:"column:timestamp"`
 }
 
